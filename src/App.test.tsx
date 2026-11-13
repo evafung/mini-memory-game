@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import App from './App';
@@ -75,5 +75,42 @@ describe('application journeys', () => {
     });
 
     expect(screen.getByRole('heading', { name: /game over/i })).toBeInTheDocument();
+  });
+
+  it('opens settings with interactive visual controls and reset confirmation', () => {
+    render(<App />);
+
+    expect(screen.getByRole('button', { name: 'Leaderboard' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Profile' })).toBeDisabled();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+
+    expect(screen.getByRole('heading', { name: 'Settings' })).toBeInTheDocument();
+    expect(screen.getByRole('switch', { name: 'Background music' })).toBeChecked();
+    expect(screen.getByRole('switch', { name: 'Sound effects' })).toBeChecked();
+    expect(screen.getByRole('switch', { name: 'Haptic feedback' })).toBeChecked();
+    expect(screen.getByRole('slider', { name: 'Music volume' })).toHaveValue('30');
+    expect(screen.getByRole('slider', { name: 'Sound volume' })).toHaveValue('70');
+
+    fireEvent.click(screen.getByRole('switch', { name: 'Background music' }));
+    expect(screen.getByRole('switch', { name: 'Background music' })).not.toBeChecked();
+
+    fireEvent.change(screen.getByRole('slider', { name: 'Music volume' }), {
+      target: { value: '45' },
+    });
+    expect(screen.getByText('45%')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /^Reset$/ }));
+    expect(screen.getByRole('dialog', { name: 'Reset personal records?' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /^Reset$/ }));
+    const resetDialog = screen.getByRole('dialog', { name: 'Reset personal records?' });
+    fireEvent.click(within(resetDialog).getByRole('button', { name: 'Reset' }));
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back to Home' }));
+    expect(screen.getByRole('img', { name: /mini memory game logo/i })).toBeInTheDocument();
   });
 });

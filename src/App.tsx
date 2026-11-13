@@ -11,6 +11,8 @@ import {
   ReplayIcon,
   ShapeIcon,
 } from './components/ShapeIcons';
+import HomeNavigation from './components/HomeNavigation';
+import SettingsPage from './components/SettingsPage';
 import {
   SHAPE_DEFINITIONS,
   calculateBonus,
@@ -93,6 +95,7 @@ function HomeDialog({
 
 function App() {
   const [phase, setPhase] = useState<GamePhase>('HOME');
+  const [page, setPage] = useState<'home' | 'settings'>('home');
   const [homeModal, setHomeModal] = useState<HomeModalKind>(null);
   const [score, setScore] = useState(0);
   const [difficulty, setDifficulty] = useState<Difficulty>(INITIAL_DIFFICULTY);
@@ -358,6 +361,10 @@ function App() {
     return slots;
   }, [gameOverReason, phase, playerSelections, sequence.length]);
 
+  if (page === 'settings') {
+    return <SettingsPage onBack={() => setPage('home')} />;
+  }
+
   const renderMiddleDisplay = () => {
     if (phase === 'HOME') {
       return (
@@ -441,7 +448,10 @@ function App() {
     <div className="app-shell">
       {phase === 'HOME' ? (
         <>
-          <main className="home-main">{renderMiddleDisplay()}</main>
+          <main className="home-main">
+            <HomeNavigation onSettings={() => setPage('settings')} />
+            <div className="home-content">{renderMiddleDisplay()}</div>
+          </main>
           <footer className="home-footer">
             <button
               className="how-to-play-button"
