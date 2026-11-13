@@ -26,6 +26,7 @@ import {
   type PlayerSelection,
   type ShapeId,
 } from './game/engine';
+import { useGameAudio } from './game/useGameAudio';
 import './App.css';
 
 type HomeModalKind = 'how-to-play' | 'app-info' | null;
@@ -107,6 +108,7 @@ function App() {
   const [remainingTimeMs, setRemainingTimeMs] = useState(INITIAL_DIFFICULTY.inputTimeMs);
   const [gameOverReason, setGameOverReason] = useState<'incorrect' | 'timeout' | null>(null);
 
+  const { playSound, stopSound } = useGameAudio();
   const timeoutBounds = useRef<number[]>([]);
   const animationFrameRef = useRef<number | null>(null);
 
@@ -139,14 +141,16 @@ function App() {
   const startNewGame = useCallback(() => {
     clearScheduledTimers();
     stopAnimationFrame();
+    stopSound('roundTimer');
     setScore(0);
     setDifficulty(INITIAL_DIFFICULTY);
     beginRound(INITIAL_DIFFICULTY);
-  }, [beginRound, clearScheduledTimers, stopAnimationFrame]);
+  }, [beginRound, clearScheduledTimers, stopAnimationFrame, stopSound]);
 
   const returnHome = useCallback(() => {
     clearScheduledTimers();
     stopAnimationFrame();
+    stopSound('roundTimer');
     setPhase('HOME');
     setScore(0);
     setDifficulty(INITIAL_DIFFICULTY);
@@ -157,7 +161,7 @@ function App() {
     setRemainingTimeMs(INITIAL_DIFFICULTY.inputTimeMs);
     setCountdownValue(null);
     setGameOverReason(null);
-  }, [clearScheduledTimers, stopAnimationFrame]);
+  }, [clearScheduledTimers, stopAnimationFrame, stopSound]);
 
   useEffect(() => {
     if (phase !== 'COUNTDOWN') {
@@ -165,9 +169,18 @@ function App() {
     }
 
     const countdownTimers = [
-      window.setTimeout(() => setCountdownValue(3), 0),
-      window.setTimeout(() => setCountdownValue(2), 1000),
-      window.setTimeout(() => setCountdownValue(1), 2000),
+      window.setTimeout(() => {
+        setCountdownValue(3);
+        playSound('countdown');
+      }, 0),
+      window.setTimeout(() => {
+        setCountdownValue(2);
+        playSound('countdown');
+      }, 1000),
+      window.setTimeout(() => {
+        setCountdownValue(1);
+        playSound('countdown');
+      }, 2000),
       window.setTimeout(() => {
         setCountdownValue(null);
         setPhase('SHOWING_SEQUENCE');
@@ -182,7 +195,7 @@ function App() {
         (timerId) => !countdownTimers.includes(timerId),
       );
     };
-  }, [phase]);
+  }, [phase, playSound]);
 
   useEffect(() => {
     if (phase !== 'SHOWING_SEQUENCE' || sequence.length === 0) {
@@ -196,6 +209,7 @@ function App() {
         return;
       }
 
+      playSound('shapePop');
       setDisplayedShape(sequence[index]);
 
       if (index === sequence.length - 1) {
@@ -224,7 +238,7 @@ function App() {
         return false;
       });
     };
-  }, [phase, sequence, difficulty.displayDurationMs]);
+  }, [phase, sequence, difficulty.displayDurationMs, playSound]);
 
   useEffect(() => {
     if (phase !== 'GAME_OVER_DELAY') {
@@ -248,6 +262,7 @@ function App() {
       return undefined;
     }
 
+    playSound('roundTimer');
     const startTimestamp = performance.now();
     const tick = () => {
       const elapsed = performance.now() - startTimestamp;
@@ -257,6 +272,7 @@ function App() {
       if (newRemaining <= 0) {
         setRemainingTimeMs(0);
         setGameOverReason('timeout');
+        stopSound('roundTimer');
         setPhase('GAME_OVER_DELAY');
         return;
       }
@@ -268,8 +284,9 @@ function App() {
 
     return () => {
       stopAnimationFrame();
+      stopSound('roundTimer');
     };
-  }, [phase, difficulty.inputTimeMs, stopAnimationFrame]);
+  }, [phase, difficulty.inputTimeMs, playSound, stopAnimationFrame, stopSound]);
 
   useEffect(() => {
     if (phase !== 'ROUND_SUCCESS') {
@@ -308,6 +325,8 @@ function App() {
 
       if (!isCorrect) {
         setGameOverReason('incorrect');
+        playSound('wrong');
+        stopSound('roundTimer');
         setPhase('GAME_OVER_DELAY');
         return;
       }
@@ -315,6 +334,8 @@ function App() {
       const nextIndex = selectionIndex + 1;
       if (nextIndex >= sequence.length) {
         const earnedPoints = calculateBonus(remainingTimeMs);
+        playSound('roundComplete');
+        stopSound('roundTimer');
         setScore((currentScore) => currentScore + earnedPoints);
         setSelectionIndex(nextIndex);
         setPhase('ROUND_SUCCESS');
@@ -323,7 +344,7 @@ function App() {
 
       setSelectionIndex(nextIndex);
     },
-    [phase, remainingTimeMs, selectionIndex, sequence],
+    [phase, playSound, remainingTimeMs, selectionIndex, sequence, stopSound],
   );
 
   const isButtonDisabled = phase !== 'PLAYER_INPUT';

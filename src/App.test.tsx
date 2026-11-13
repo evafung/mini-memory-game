@@ -3,6 +3,20 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import App from './App';
 
+function startRoundAndReachPlayerInput() {
+  act(() => {
+    fireEvent.click(screen.getByRole('button', { name: /start/i }));
+  });
+
+  act(() => {
+    vi.advanceTimersByTime(3000);
+  });
+
+  act(() => {
+    vi.advanceTimersByTime(6000);
+  });
+}
+
 describe('application journeys', () => {
   beforeEach(() => {
     vi.useFakeTimers();
@@ -112,5 +126,51 @@ describe('application journeys', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Back to Home' }));
     expect(screen.getByRole('img', { name: /mini memory game logo/i })).toBeInTheDocument();
+  });
+
+  it('plays countdown, shape, timer, and wrong-answer sounds at the expected phases', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.1);
+    const playedSources: string[] = [];
+
+    vi.spyOn(HTMLMediaElement.prototype, 'play').mockImplementation(function (
+      this: HTMLMediaElement,
+    ) {
+      playedSources.push(this.src);
+      return Promise.resolve();
+    });
+
+    render(<App />);
+    startRoundAndReachPlayerInput();
+
+    expect(playedSources.filter((source) => source.includes('beep.mp3'))).toHaveLength(3);
+    expect(playedSources.filter((source) => source.includes('pop.mp3'))).toHaveLength(3);
+    expect(
+      playedSources.filter((source) => source.includes('countdown-10s.mp3')),
+    ).toHaveLength(1);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Select Triangle' }));
+    expect(playedSources.filter((source) => source.includes('wrong.mp3'))).toHaveLength(1);
+  });
+
+  it('plays the bell once when a round is completed', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.1);
+    const playedSources: string[] = [];
+
+    vi.spyOn(HTMLMediaElement.prototype, 'play').mockImplementation(function (
+      this: HTMLMediaElement,
+    ) {
+      playedSources.push(this.src);
+      return Promise.resolve();
+    });
+
+    render(<App />);
+    startRoundAndReachPlayerInput();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Select Circle' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Select Square' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Select Circle' }));
+
+    expect(screen.getByText('Round cleared')).toBeInTheDocument();
+    expect(playedSources.filter((source) => source.includes('bell.mp3'))).toHaveLength(1);
   });
 });

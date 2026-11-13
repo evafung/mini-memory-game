@@ -1,5 +1,19 @@
 import '@testing-library/jest-dom/vitest';
 
+if (typeof HTMLMediaElement !== 'undefined') {
+  Object.defineProperty(HTMLMediaElement.prototype, 'play', {
+    configurable: true,
+    value() {
+      return Promise.resolve();
+    },
+  });
+
+  Object.defineProperty(HTMLMediaElement.prototype, 'pause', {
+    configurable: true,
+    value() {},
+  });
+}
+
 if (typeof HTMLDialogElement !== 'undefined') {
   const dialogPrototype = HTMLDialogElement.prototype;
 
