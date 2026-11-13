@@ -5,6 +5,7 @@ export type GamePhase =
   | 'SHOWING_SEQUENCE'
   | 'PLAYER_INPUT'
   | 'ROUND_SUCCESS'
+  | 'GAME_OVER_DELAY'
   | 'GAME_OVER';
 
 export interface ShapeDefinition {
@@ -46,6 +47,8 @@ export const INITIAL_DIFFICULTY: Difficulty = {
   maxSequenceLength: 10,
   minDisplayDurationMs: 600,
 };
+
+export const GAME_OVER_DELAY_MS = 1000;
 
 export function nextDifficulty(current: Difficulty): Difficulty {
   const nextSequenceLength = Math.min(

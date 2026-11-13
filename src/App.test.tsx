@@ -32,4 +32,40 @@ describe('application journeys', () => {
 
     expect(screen.getByText('2')).toBeInTheDocument();
   });
+
+  it('keeps the game view for one second before showing the final score', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.1);
+    render(<App />);
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: /start/i }));
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(3000);
+    });
+
+    act(() => {
+      vi.advanceTimersByTime(6000);
+    });
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: /select triangle/i }));
+    });
+
+    expect(screen.queryByRole('heading', { name: /game over/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /select circle/i })).toBeDisabled();
+
+    act(() => {
+      vi.advanceTimersByTime(999);
+    });
+
+    expect(screen.queryByRole('heading', { name: /game over/i })).not.toBeInTheDocument();
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+
+    expect(screen.getByRole('heading', { name: /game over/i })).toBeInTheDocument();
+  });
 });

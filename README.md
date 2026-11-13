@@ -1,32 +1,45 @@
-# React + TypeScript + Vite
+# Mini Memory Game
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A responsive, mobile-first memory game built with React, TypeScript, and Vite. Watch the shapes, repeat the sequence in order, and earn bonus points for finishing quickly.
 
-Currently, two official plugins are available:
+## Requirements
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Node.js 20.19+ or 22.12+
+- npm
 
-## React Compiler
+## Getting started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```sh
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Vite prints the local URL when the development server is ready.
+
+## Gameplay
+
+- Select **Start** to begin a new game.
+- Watch the 3-2-1 countdown, then memorize the sequence of colored shapes.
+- Repeat the sequence by selecting the four shape buttons in order before the timer runs out.
+- Earn a time bonus for each successful round. Sequences get longer and shapes display faster as you progress.
+- Choose **Play Again** to restart or **Back to Home** to return to the title screen.
+
+## Scripts
+
+| Command | Description |
+| --- | --- |
+| `npm run dev` | Start the development server |
+| `npm run build` | Type-check and create a production build |
+| `npm run preview` | Preview the production build |
+| `npm test` | Run the Vitest test suite |
+| `npm run lint` | Run Oxlint |
+
+## Project structure
+
+- `src/App.tsx` — game screens, state, and round/timer transitions
+- `src/game/engine.ts` — shape definitions, sequence generation, scoring, and difficulty progression
+- `src/components/ShapeIcons.tsx` — reusable SVG shapes and interface icons
+- `src/App.css` and `src/index.css` — responsive game layout and global styles
+- `public/favicon.svg` — four-shape browser favicon
+
+The game runs entirely in the browser and does not require a backend.

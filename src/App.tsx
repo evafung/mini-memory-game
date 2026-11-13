@@ -11,6 +11,7 @@ import {
 import {
   SHAPE_DEFINITIONS,
   calculateBonus,
+  GAME_OVER_DELAY_MS,
   generateSequence,
   INITIAL_DIFFICULTY,
   isSelectionCorrect,
@@ -154,6 +155,23 @@ function App() {
   }, [phase, sequence, difficulty.displayDurationMs]);
 
   useEffect(() => {
+    if (phase !== 'GAME_OVER_DELAY') {
+      return undefined;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setPhase('GAME_OVER');
+    }, GAME_OVER_DELAY_MS);
+
+    timeoutBounds.current.push(timeoutId);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      timeoutBounds.current = timeoutBounds.current.filter((timerId) => timerId !== timeoutId);
+    };
+  }, [phase]);
+
+  useEffect(() => {
     if (phase !== 'PLAYER_INPUT') {
       return undefined;
     }
@@ -167,7 +185,7 @@ function App() {
       if (newRemaining <= 0) {
         setRemainingTimeMs(0);
         setGameOverReason('timeout');
-        setPhase('GAME_OVER');
+        setPhase('GAME_OVER_DELAY');
         return;
       }
 
@@ -218,7 +236,7 @@ function App() {
 
       if (!isCorrect) {
         setGameOverReason('incorrect');
-        setPhase('GAME_OVER');
+        setPhase('GAME_OVER_DELAY');
         return;
       }
 
@@ -240,7 +258,7 @@ function App() {
 
   const playerAnswerSlots = useMemo(() => {
     const timeoutMarkerVisible =
-      phase === 'GAME_OVER' &&
+      (phase === 'GAME_OVER_DELAY' || phase === 'GAME_OVER') &&
       gameOverReason === 'timeout' &&
       !playerSelections.some((selection) => !selection.isCorrect) &&
       playerSelections.length < sequence.length;
@@ -299,7 +317,7 @@ function App() {
       );
     }
 
-    if (phase === 'PLAYER_INPUT') {
+    if (phase === 'PLAYER_INPUT' || phase === 'GAME_OVER_DELAY') {
       const inputProgress = Math.min(1, Math.max(0, remainingTimeMs / difficulty.inputTimeMs));
       return (
         <div className="input-display">
@@ -379,7 +397,7 @@ function App() {
                 <span className="shape-button__shape">
                   <ShapeIcon
                     shapeId={shape.id}
-                    size={44}
+                    size={72}
                     faded={isButtonDisabled}
                   />
                 </span>
