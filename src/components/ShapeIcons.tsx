@@ -65,6 +65,49 @@ export function ShapeIcon(props: ShapeIconProps) {
   return <ShapeGraphic {...props} />;
 }
 
+export function GameLogo({ size = 100 }: { size?: number }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 100 100"
+      role="img"
+      aria-label="Mini Memory Game logo with four colored shapes"
+    >
+      <circle cx="27" cy="27" r="15" fill="#EF1C27" />
+      <rect x="58" y="12" width="30" height="30" rx="3" fill="#079FE0" />
+      <polygon
+        points="27,56 32,68 45,69 35,77 38,90 27,82 16,90 19,77 9,69 22,68"
+        fill="#FFE500"
+      />
+      <polygon points="73,55 91,89 55,89" fill="#20AE4B" />
+    </svg>
+  );
+}
+
+export function InfoIcon({ size = 22 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" fill="none">
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M12 11V16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="12" cy="7.5" r="1" fill="currentColor" />
+    </svg>
+  );
+}
+
+export function CloseIcon({ size = 20 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" fill="none">
+      <path
+        d="M6 6L18 18M18 6L6 18"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 export function CheckMark({ size = 20 }: { size?: number }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true">

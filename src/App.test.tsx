@@ -17,8 +17,10 @@ describe('application journeys', () => {
   it('renders the home screen and starts a new game', () => {
     render(<App />);
 
-    expect(screen.getByRole('heading', { name: /mini memory game/i })).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: /mini memory game logo/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /start/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /how to play/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /app information/i })).toBeInTheDocument();
 
     act(() => {
       fireEvent.click(screen.getByRole('button', { name: /start/i }));
@@ -31,6 +33,12 @@ describe('application journeys', () => {
     });
 
     expect(screen.getByText('2')).toBeInTheDocument();
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: /back to home/i }));
+    });
+
+    expect(screen.getByRole('img', { name: /mini memory game logo/i })).toBeInTheDocument();
   });
 
   it('keeps the game view for one second before showing the final score', () => {
