@@ -128,6 +128,16 @@ describe('application journeys', () => {
     expect(screen.getByRole('img', { name: /mini memory game logo/i })).toBeInTheDocument();
   });
 
+  it('shows the description and version details in the app info modal', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'App information' }));
+
+    expect(screen.getByText(/watch the shapes, remember their order/i)).toBeInTheDocument();
+    expect(screen.getByText('Version 1.0.0')).toBeInTheDocument();
+    expect(screen.getByText('© 2026')).toBeInTheDocument();
+  });
+
   it('plays countdown, shape, timer, and wrong-answer sounds at the expected phases', () => {
     vi.spyOn(Math, 'random').mockReturnValue(0.1);
     const playedSources: string[] = [];
@@ -172,5 +182,38 @@ describe('application journeys', () => {
 
     expect(screen.getByText('Round cleared')).toBeInTheDocument();
     expect(playedSources.filter((source) => source.includes('bell.mp3'))).toHaveLength(1);
+  });
+
+  it('starts looping background music and keeps it playing when exiting to Home', () => {
+    let backgroundMusicPlayed = false;
+    let backgroundMusicStopped = false;
+
+    vi.spyOn(HTMLMediaElement.prototype, 'play').mockImplementation(function (
+      this: HTMLMediaElement,
+    ) {
+      if (this.src.includes('bg-music.mp3')) {
+        expect(this.loop).toBe(true);
+        backgroundMusicPlayed = true;
+      }
+
+      return Promise.resolve();
+    });
+
+    vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(function (
+      this: HTMLMediaElement,
+    ) {
+      if (this.src.includes('bg-music.mp3') && backgroundMusicPlayed) {
+        backgroundMusicStopped = true;
+      }
+    });
+
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: /start/i }));
+
+    expect(backgroundMusicPlayed).toBe(true);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back to Home' }));
+    expect(backgroundMusicStopped).toBe(false);
+    expect(screen.getByRole('img', { name: /mini memory game logo/i })).toBeInTheDocument();
   });
 });
