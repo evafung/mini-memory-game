@@ -22,19 +22,6 @@ const BOOLEAN_SETTING_KEYS = [
 
 const VOLUME_SETTING_KEYS = ['musicVolume', 'soundVolume'] as const;
 
-function getSystemReduceAnimationsPreference(): boolean {
-  try {
-    return (
-      typeof window !== 'undefined' &&
-      typeof window.matchMedia === 'function' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    );
-  } catch (error) {
-    console.warn('Unable to read the reduced-motion preference; using the default.', error);
-    return false;
-  }
-}
-
 export function createDefaultSettings(): AppSettings {
   return {
     colourBlindMode: false,
@@ -44,7 +31,7 @@ export function createDefaultSettings(): AppSettings {
     soundEffects: true,
     soundVolume: 70,
     hapticFeedback: true,
-    reduceAnimations: getSystemReduceAnimationsPreference(),
+    reduceAnimations: false,
   };
 }
 

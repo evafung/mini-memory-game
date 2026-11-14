@@ -7,6 +7,9 @@ import {
   SETTINGS_STORAGE_KEY,
 } from './services/settingsService';
 
+const originalMatchMediaDescriptor = Object.getOwnPropertyDescriptor(window, 'matchMedia');
+const originalVibrateDescriptor = Object.getOwnPropertyDescriptor(navigator, 'vibrate');
+
 function startRoundAndReachPlayerInput() {
   act(() => {
     fireEvent.click(screen.getByRole('button', { name: /start/i }));
@@ -32,6 +35,16 @@ describe('application journeys', () => {
     vi.useRealTimers();
     vi.restoreAllMocks();
     window.localStorage.clear();
+    if (originalMatchMediaDescriptor) {
+      Object.defineProperty(window, 'matchMedia', originalMatchMediaDescriptor);
+    } else {
+      Reflect.deleteProperty(window, 'matchMedia');
+    }
+    if (originalVibrateDescriptor) {
+      Object.defineProperty(navigator, 'vibrate', originalVibrateDescriptor);
+    } else {
+      Reflect.deleteProperty(navigator, 'vibrate');
+    }
   });
 
   it('renders the home screen and starts a new game', () => {
@@ -148,6 +161,126 @@ describe('application journeys', () => {
     expect(header?.parentElement).toHaveClass('settings-page');
     expect(content).not.toBeNull();
     expect(content).not.toContainElement(screen.getByRole('heading', { name: 'Settings' }));
+  });
+
+  it('combines the system motion preference without changing the saved user preference', () => {
+    let changeHandler: ((event: MediaQueryListEvent) => void) | undefined;
+    let systemPreference = false;
+    const mediaQuery = {
+      get matches() {
+        return systemPreference;
+      },
+      media: '(prefers-reduced-motion: reduce)',
+      onchange: null,
+      addEventListener: vi.fn(
+        (_type: string, listener: (event: MediaQueryListEvent) => void) => {
+          changeHandler = listener;
+        },
+      ),
+      removeEventListener: vi.fn(),
+    } as unknown as MediaQueryList;
+    Object.defineProperty(window, 'matchMedia', {
+      configurable: true,
+      value: vi.fn(() => mediaQuery),
+    });
+
+    render(<App />);
+    const app = document.querySelector('.application');
+    expect(app).toHaveAttribute('data-reduce-motion', 'false');
+
+    act(() => {
+      systemPreference = true;
+      changeHandler?.({ matches: true } as MediaQueryListEvent);
+    });
+    expect(app).toHaveAttribute('data-reduce-motion', 'true');
+    expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? 'null')).toMatchObject({
+      reduceAnimations: false,
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    expect(screen.getByRole('switch', { name: 'Reduce animations' })).not.toBeChecked();
+
+    act(() => {
+      systemPreference = false;
+      changeHandler?.({ matches: false } as MediaQueryListEvent);
+    });
+    expect(app).toHaveAttribute('data-reduce-motion', 'false');
+    expect(screen.getByRole('switch', { name: 'Reduce animations' })).not.toBeChecked();
+
+    fireEvent.click(screen.getByRole('switch', { name: 'Reduce animations' }));
+    expect(app).toHaveAttribute('data-reduce-motion', 'true');
+    act(() => {
+      systemPreference = true;
+      changeHandler?.({ matches: true } as MediaQueryListEvent);
+    });
+    expect(app).toHaveAttribute('data-reduce-motion', 'true');
+    expect(JSON.parse(window.localStorage.getItem(SETTINGS_STORAGE_KEY) ?? 'null')).toMatchObject({
+      reduceAnimations: true,
+    });
+  });
+
+  it('triggers haptics for button interactions only while the setting is enabled', () => {
+    const vibrate = vi.fn(() => true);
+    Object.defineProperty(navigator, 'vibrate', {
+      configurable: true,
+      value: vibrate,
+    });
+
+    render(<App />);
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    });
+    expect(vibrate).toHaveBeenCalledTimes(1);
+    expect(vibrate).toHaveBeenLastCalledWith([10]);
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Back to Home' }));
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole('switch', { name: 'Haptic feedback' }));
+    });
+    expect(vibrate).toHaveBeenCalledTimes(4);
+
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Back to Home' }));
+    });
+    act(() => {
+      fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    });
+    expect(vibrate).toHaveBeenCalledTimes(4);
+  });
+
+  it('uses distinct haptic patterns for correct, incorrect, and game-over events', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.1);
+    const vibrate = vi.fn(() => true);
+    Object.defineProperty(navigator, 'vibrate', {
+      configurable: true,
+      value: vibrate,
+    });
+
+    render(<App />);
+    startRoundAndReachPlayerInput();
+    fireEvent.click(screen.getByRole('button', { name: 'Select Circle' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Select Triangle' }));
+
+    expect(vibrate.mock.calls).toEqual([
+      [[10]],
+      [[18]],
+      [[40, 35, 40]],
+    ]);
+
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(vibrate.mock.calls).toEqual([
+      [[10]],
+      [[18]],
+      [[40, 35, 40]],
+      [[50, 45, 50]],
+    ]);
   });
 
   it('applies colour blind and dark appearance settings without resetting the app', () => {

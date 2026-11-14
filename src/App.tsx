@@ -34,6 +34,8 @@ import {
   type ShapeId,
 } from './game/engine';
 import { useGameAudio } from './game/useGameAudio';
+import { usePrefersReducedMotion } from './hooks/usePrefersReducedMotion';
+import { triggerHaptic } from './services/hapticService';
 import {
   loadSettings,
   saveSettings,
@@ -144,6 +146,8 @@ function App() {
   const [gameOverReason, setGameOverReason] = useState<'incorrect' | 'timeout' | null>(null);
 
   const { playSound, stopSound } = useGameAudio(settings);
+  const systemPrefersReducedMotion = usePrefersReducedMotion();
+  const effectiveReduceAnimations = settings.reduceAnimations || systemPrefersReducedMotion;
   const timeoutBounds = useRef<number[]>([]);
   const animationFrameRef = useRef<number | null>(null);
 
@@ -159,9 +163,12 @@ function App() {
     (event: MouseEvent<HTMLDivElement>) => {
       if (event.target instanceof Element && event.target.closest('button')) {
         playSound('buttonClick');
+        if (!event.target.closest('.shape-button')) {
+          triggerHaptic('button', settings.hapticFeedback);
+        }
       }
     },
-    [playSound],
+    [playSound, settings.hapticFeedback],
   );
 
   const clearScheduledTimers = useCallback(() => {
@@ -312,8 +319,9 @@ function App() {
   useEffect(() => {
     if (phase === 'GAME_OVER') {
       playSound('gameOver');
+      triggerHaptic('gameOver', settings.hapticFeedback);
     }
-  }, [phase, playSound]);
+  }, [phase, playSound, settings.hapticFeedback]);
 
   useEffect(() => {
     if (phase !== 'PLAYER_INPUT') {
@@ -382,6 +390,7 @@ function App() {
       setPlayerSelections((current) => [...current, newSelection]);
 
       if (!isCorrect) {
+        triggerHaptic('incorrect', settings.hapticFeedback);
         setGameOverReason('incorrect');
         playSound('wrong');
         stopSound('roundTimer');
@@ -391,6 +400,10 @@ function App() {
 
       playSound('correctAnswer');
       const nextIndex = selectionIndex + 1;
+      triggerHaptic(
+        nextIndex >= sequence.length ? 'roundComplete' : 'correct',
+        settings.hapticFeedback,
+      );
       if (nextIndex >= sequence.length) {
         const earnedPoints = calculateBonus(remainingTimeMs);
         playSound('roundComplete');
@@ -403,7 +416,15 @@ function App() {
 
       setSelectionIndex(nextIndex);
     },
-    [phase, playSound, remainingTimeMs, selectionIndex, sequence, stopSound],
+    [
+      phase,
+      playSound,
+      remainingTimeMs,
+      selectionIndex,
+      sequence,
+      settings.hapticFeedback,
+      stopSound,
+    ],
   );
 
   const isButtonDisabled = phase !== 'PLAYER_INPUT';
@@ -447,6 +468,7 @@ function App() {
         className="application"
         data-dark-mode={settings.darkMode}
         data-colour-blind={settings.colourBlindMode}
+        data-reduce-motion={effectiveReduceAnimations}
         onClickCapture={handleButtonInteraction}
       >
         <SettingsPage
@@ -519,6 +541,7 @@ function App() {
         className="application"
         data-dark-mode={settings.darkMode}
         data-colour-blind={settings.colourBlindMode}
+        data-reduce-motion={effectiveReduceAnimations}
         onClickCapture={handleButtonInteraction}
       >
         <div className="app-shell app-shell--gameover">
@@ -549,6 +572,7 @@ function App() {
       className="application"
       data-dark-mode={settings.darkMode}
       data-colour-blind={settings.colourBlindMode}
+      data-reduce-motion={effectiveReduceAnimations}
       onClickCapture={handleButtonInteraction}
     >
       <div className="app-shell">

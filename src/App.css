@@ -1089,10 +1089,47 @@
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation: none !important;
-    transition: none !important;
-    scroll-behavior: auto !important;
-  }
+.application[data-reduce-motion='true'] .shape-button,
+.application[data-reduce-motion='true'] .home-navigation__button,
+.application[data-reduce-motion='true'] .home-navigation__tooltip::after,
+.application[data-reduce-motion='true'] .how-to-play-button,
+.application[data-reduce-motion='true'] .app-info-button,
+.application[data-reduce-motion='true'] .settings-header__back,
+.application[data-reduce-motion='true'] .settings-toggle,
+.application[data-reduce-motion='true'] .settings-toggle__thumb,
+.application[data-reduce-motion='true'] .settings-reset-button,
+.application[data-reduce-motion='true'] .settings-confirmation,
+.application[data-reduce-motion='true'] .settings-confirmation::backdrop,
+.application[data-reduce-motion='true'] .settings-confirmation__cancel,
+.application[data-reduce-motion='true'] .settings-confirmation__reset,
+.application[data-reduce-motion='true'] .primary-button,
+.application[data-reduce-motion='true'] .game-action-button {
+  transition: none;
+}
+
+.application[data-reduce-motion='true'] .countdown-display,
+.application[data-reduce-motion='true'] .countdown-value,
+.application[data-reduce-motion='true'] .sequence-display,
+.application[data-reduce-motion='true'] .round-success,
+.application[data-reduce-motion='true'] .final-score-wrap {
+  animation: none;
+}
+
+.application[data-reduce-motion='true'] {
+  scroll-behavior: auto;
+}
+
+.application[data-reduce-motion='true'] .shape-button:not(:disabled):hover,
+.application[data-reduce-motion='true'] .shape-button:not(:disabled):focus-visible,
+.application[data-reduce-motion='true'] .home-navigation__button:active:not(:disabled),
+.application[data-reduce-motion='true'] .settings-header__back:active,
+.application[data-reduce-motion='true'] .home-navigation__tooltip::after,
+.application[data-reduce-motion='true'] .primary-button:hover,
+.application[data-reduce-motion='true'] .game-action-button:hover,
+.application[data-reduce-motion='true'] .settings-reset-button:active,
+.application[data-reduce-motion='true'] .settings-confirmation__cancel:active,
+.application[data-reduce-motion='true'] .settings-confirmation__reset:active,
+.application[data-reduce-motion='true'] .settings-confirmation,
+.application[data-reduce-motion='true'] .settings-confirmation[open] {
+  transform: none;
 }
