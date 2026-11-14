@@ -85,10 +85,16 @@ function HomeDialog({
           </ol>
         </>
       ) : (
-        <>
+        <div className="app-info-content">
           <h2 id="home-dialog-title">Mini Memory Game</h2>
-          <p className="app-info-copyright">© 2026</p>
-        </>
+          <p className="app-info-description">
+            Watch the shapes, remember their order, and see how far your memory can take you.
+          </p>
+          <div className="app-info-footer">
+            <span>Version 1.0.0</span>
+            <span>© 2026</span>
+          </div>
+        </div>
       )}
     </dialog>
   );

@@ -394,9 +394,18 @@
   font-weight: 700;
 }
 
-.app-info-copyright {
-  margin: 0;
+.app-info-description {
+  margin: 0 0 32px;
   color: #777;
+  line-height: 1.55;
+}
+
+.app-info-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  color: #999;
+  font-size: 0.75rem;
 }
 
 .home-dialog:focus {
