@@ -136,6 +136,20 @@ describe('application journeys', () => {
     expect(screen.getByRole('img', { name: /mini memory game logo/i })).toBeInTheDocument();
   });
 
+  it('keeps the settings header outside the scrollable settings content', () => {
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+
+    const header = screen.getByRole('heading', { name: 'Settings' }).closest('.settings-header');
+    const content = screen.getByRole('region', { name: 'Audio' }).closest(
+      '.settings-page__content',
+    );
+
+    expect(header?.parentElement).toHaveClass('settings-page');
+    expect(content).not.toBeNull();
+    expect(content).not.toContainElement(screen.getByRole('heading', { name: 'Settings' }));
+  });
+
   it('applies colour blind and dark appearance settings without resetting the app', () => {
     render(<App />);
 

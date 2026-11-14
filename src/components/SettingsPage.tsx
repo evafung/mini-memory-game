@@ -159,20 +159,20 @@ export default function SettingsPage({
 
   return (
     <main className="settings-page">
-      <div className="settings-page__content">
-        <header className="settings-header">
-          <button
-            className="settings-header__back"
-            type="button"
-            aria-label="Back to Home"
-            onClick={onBack}
-          >
-            <BackArrowIcon />
-          </button>
-          <h1>Settings</h1>
-          <span aria-hidden="true" />
-        </header>
+      <header className="settings-header">
+        <button
+          className="settings-header__back"
+          type="button"
+          aria-label="Back to Home"
+          onClick={onBack}
+        >
+          <BackArrowIcon />
+        </button>
+        <h1>Settings</h1>
+        <span aria-hidden="true" />
+      </header>
 
+      <div className="settings-page__content">
         <SettingsSection title="Appearance & Accessibility">
           <SettingToggle
             label="Colour blind mode"
@@ -257,12 +257,12 @@ export default function SettingsPage({
             </button>
           </div>
         </SettingsSection>
-      </div>
 
-      <footer className="settings-footer">
-        <span>Mini Memory Game</span>
-        <span>Version 1.0.0</span>
-      </footer>
+        <footer className="settings-footer">
+          <span>Mini Memory Game</span>
+          <span>Version 1.0.0</span>
+        </footer>
+      </div>
 
       <SettingsConfirmation
         open={isResetConfirmationOpen}

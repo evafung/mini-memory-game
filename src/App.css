@@ -575,9 +575,11 @@
 .settings-page {
   display: flex;
   width: 100%;
-  min-height: 100dvh;
+  height: 100dvh;
+  min-height: 0;
   flex-direction: column;
   margin: 0 auto;
+  overflow: hidden;
   padding:
     calc(env(safe-area-inset-top) + 22px)
     max(22px, env(safe-area-inset-right))
@@ -588,16 +590,30 @@
 }
 
 .settings-page__content {
+  display: flex;
   width: min(100%, 560px);
+  min-height: 0;
+  flex: 1;
+  flex-direction: column;
   margin: 0 auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.settings-page__content::-webkit-scrollbar {
+  display: none;
 }
 
 .settings-header {
   display: grid;
+  width: min(100%, 560px);
   grid-template-columns: 44px 1fr 44px;
   align-items: center;
+  flex: 0 0 auto;
   min-height: 46px;
-  margin-bottom: 30px;
+  margin: 0 auto 30px;
 }
 
 .settings-header h1 {
@@ -626,6 +642,7 @@
 }
 
 .settings-section {
+  flex: 0 0 auto;
   padding-bottom: 23px;
 }
 
@@ -770,6 +787,7 @@
 .settings-footer {
   display: flex;
   width: min(100%, 560px);
+  flex: 0 0 auto;
   justify-content: space-between;
   gap: 12px;
   margin: auto auto 0;

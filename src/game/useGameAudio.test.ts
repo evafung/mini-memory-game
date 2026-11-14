@@ -33,7 +33,7 @@ describe('useGameAudio', () => {
       { initialProps: { settings: initialSettings } },
     );
 
-    const music = playedAudio.find((audio) => audio.src.includes('bg-music.mp3'));
+    const music = playedAudio.find((audio) => audio.src.includes('bgm.mp3'));
     expect(music).toBeDefined();
     expect(music?.volume).toBe(0.3);
 
@@ -48,7 +48,7 @@ describe('useGameAudio', () => {
     });
 
     expect(music?.volume).toBe(0.55);
-    expect(playedAudio.filter((audio) => audio.src.includes('bg-music.mp3'))).toHaveLength(1);
+    expect(playedAudio.filter((audio) => audio.src.includes('bgm.mp3'))).toHaveLength(1);
 
     act(() => {
       result.current.playSound('countdown');
@@ -94,7 +94,7 @@ describe('useGameAudio', () => {
     });
 
     expect(music?.paused).toBe(false);
-    expect(playedAudio.filter((audio) => audio.src.includes('bg-music.mp3'))).toHaveLength(2);
+    expect(playedAudio.filter((audio) => audio.src.includes('bgm.mp3'))).toHaveLength(2);
     expect(playedAudio.filter((audio) => audio.src.includes('countdown-10s.mp3'))).toHaveLength(0);
 
     act(() => {
@@ -188,7 +188,7 @@ describe('useGameAudio', () => {
     });
 
     expect(playedAudio).toHaveLength(1);
-    expect(playedAudio[0].src).toContain('bg-music.mp3');
+    expect(playedAudio[0].src).toContain('bgm.mp3');
     expect(playedAudio[0].volume).toBe(0.42);
 
     unmount();
