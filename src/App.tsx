@@ -104,6 +104,8 @@ function App() {
   const [phase, setPhase] = useState<GamePhase>('HOME');
   const [page, setPage] = useState<'home' | 'settings'>('home');
   const [homeModal, setHomeModal] = useState<HomeModalKind>(null);
+  const [colourBlindMode, setColourBlindMode] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
   const [score, setScore] = useState(0);
   const [difficulty, setDifficulty] = useState<Difficulty>(INITIAL_DIFFICULTY);
   const [sequence, setSequence] = useState<ShapeId[]>([]);
@@ -389,7 +391,21 @@ function App() {
   }, [gameOverReason, phase, playerSelections, sequence.length]);
 
   if (page === 'settings') {
-    return <SettingsPage onBack={() => setPage('home')} />;
+    return (
+      <div
+        className="application"
+        data-dark-mode={darkMode}
+        data-colour-blind={colourBlindMode}
+      >
+        <SettingsPage
+          onBack={() => setPage('home')}
+          colourBlindMode={colourBlindMode}
+          darkMode={darkMode}
+          onColourBlindModeChange={() => setColourBlindMode((current) => !current)}
+          onDarkModeChange={() => setDarkMode((current) => !current)}
+        />
+      </div>
+    );
   }
 
   const renderMiddleDisplay = () => {
@@ -449,22 +465,28 @@ function App() {
 
   if (phase === 'GAME_OVER') {
     return (
-      <div className="app-shell app-shell--gameover">
-        <div className="game-over-card">
-          <h2>Game Over</h2>
-          <div className="final-score-wrap">
-            <span>Final Score</span>
-            <strong>{score}</strong>
-          </div>
-          <div className="game-over-actions">
-            <button type="button" className="game-action-button" onClick={returnHome}>
-              <HomeIcon size={22} />
-              <span>Back to Home</span>
-            </button>
-            <button type="button" className="game-action-button" onClick={startNewGame}>
-              <ReplayIcon size={22} />
-              <span>Play Again</span>
-            </button>
+      <div
+        className="application"
+        data-dark-mode={darkMode}
+        data-colour-blind={colourBlindMode}
+      >
+        <div className="app-shell app-shell--gameover">
+          <div className="game-over-card">
+            <h2>Game Over</h2>
+            <div className="final-score-wrap">
+              <span>Final Score</span>
+              <strong>{score}</strong>
+            </div>
+            <div className="game-over-actions">
+              <button type="button" className="game-action-button" onClick={returnHome}>
+                <HomeIcon size={22} />
+                <span>Back to Home</span>
+              </button>
+              <button type="button" className="game-action-button" onClick={startNewGame}>
+                <ReplayIcon size={22} />
+                <span>Play Again</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -472,74 +494,80 @@ function App() {
   }
 
   return (
-    <div className="app-shell">
-      {phase === 'HOME' ? (
-        <>
-          <main className="home-main">
-            <HomeNavigation onSettings={() => setPage('settings')} />
-            <div className="home-content">{renderMiddleDisplay()}</div>
-          </main>
-          <footer className="home-footer">
-            <button
-              className="how-to-play-button"
-              type="button"
-              onClick={() => setHomeModal('how-to-play')}
-            >
-              How to play
-            </button>
-            <button
-              className="app-info-button"
-              type="button"
-              aria-label="App information"
-              onClick={() => setHomeModal('app-info')}
-            >
-              <InfoIcon />
-            </button>
-          </footer>
-          <HomeDialog kind={homeModal} onClose={() => setHomeModal(null)} />
-        </>
-      ) : (
-        <>
-          <header className="score-row">
-            <span className="score-label">Score</span>
-            <span className="score-value">{score}</span>
-            <button
-              className="exit-game-button"
-              type="button"
-              aria-label="Back to Home"
-              onClick={returnHome}
-            >
-              <HomeIcon />
-            </button>
-          </header>
-
-          <main className="game-stage">
-            <div className="middle-display">{renderMiddleDisplay()}</div>
-            <div className="answer-row">{playerAnswerSlots}</div>
-          </main>
-
-          <footer className="shape-grid">
-            {SHAPE_DEFINITIONS.map((shape) => (
+    <div
+      className="application"
+      data-dark-mode={darkMode}
+      data-colour-blind={colourBlindMode}
+    >
+      <div className="app-shell">
+        {phase === 'HOME' ? (
+          <>
+            <main className="home-main">
+              <HomeNavigation onSettings={() => setPage('settings')} />
+              <div className="home-content">{renderMiddleDisplay()}</div>
+            </main>
+            <footer className="home-footer">
               <button
-                key={shape.id}
+                className="how-to-play-button"
                 type="button"
-                className="shape-button"
-                aria-label={`Select ${shape.label}`}
-                disabled={isButtonDisabled}
-                onClick={() => handleShapePress(shape.id)}
+                onClick={() => setHomeModal('how-to-play')}
               >
-                <span className="shape-button__shape">
-                  <ShapeIcon
-                    shapeId={shape.id}
-                    size={72}
-                    faded={isButtonDisabled}
-                  />
-                </span>
+                How to play
               </button>
-            ))}
-          </footer>
-        </>
-      )}
+              <button
+                className="app-info-button"
+                type="button"
+                aria-label="App information"
+                onClick={() => setHomeModal('app-info')}
+              >
+                <InfoIcon />
+              </button>
+            </footer>
+            <HomeDialog kind={homeModal} onClose={() => setHomeModal(null)} />
+          </>
+        ) : (
+          <>
+            <header className="score-row">
+              <span className="score-label">Score</span>
+              <span className="score-value">{score}</span>
+              <button
+                className="exit-game-button"
+                type="button"
+                aria-label="Back to Home"
+                onClick={returnHome}
+              >
+                <HomeIcon />
+              </button>
+            </header>
+
+            <main className="game-stage">
+              <div className="middle-display">{renderMiddleDisplay()}</div>
+              <div className="answer-row">{playerAnswerSlots}</div>
+            </main>
+
+            <footer className="shape-grid">
+              {SHAPE_DEFINITIONS.map((shape) => (
+                <button
+                  key={shape.id}
+                  type="button"
+                  className="shape-button"
+                  aria-label={`Select ${shape.label}`}
+                  disabled={isButtonDisabled}
+                  onClick={() => handleShapePress(shape.id)}
+                >
+                  <span className="shape-button__shape">
+                    <ShapeIcon
+                      shapeId={shape.id}
+                      size={72}
+                      faded={isButtonDisabled}
+                    />
+                  </span>
+                </button>
+              ))}
+            </footer>
+          </>
+        )}
+      </div>
     </div>
   );
 }

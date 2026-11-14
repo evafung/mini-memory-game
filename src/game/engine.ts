@@ -11,7 +11,6 @@ export type GamePhase =
 export interface ShapeDefinition {
   id: ShapeId;
   label: string;
-  color: string;
 }
 
 export interface Difficulty {
@@ -29,10 +28,10 @@ export interface PlayerSelection {
 }
 
 export const SHAPE_DEFINITIONS: ShapeDefinition[] = [
-  { id: 'circle', label: 'Circle', color: '#EF1C27' },
-  { id: 'square', label: 'Square', color: '#079FE0' },
-  { id: 'star', label: 'Star', color: '#FFE500' },
-  { id: 'triangle', label: 'Triangle', color: '#20AE4B' },
+  { id: 'circle', label: 'Circle' },
+  { id: 'square', label: 'Square' },
+  { id: 'star', label: 'Star' },
+  { id: 'triangle', label: 'Triangle' },
 ];
 
 export const SHAPE_IDS = SHAPE_DEFINITIONS.map((shape) => shape.id);

@@ -128,6 +128,44 @@ describe('application journeys', () => {
     expect(screen.getByRole('img', { name: /mini memory game logo/i })).toBeInTheDocument();
   });
 
+  it('applies colour blind and dark appearance settings without resetting the app', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+
+    const appearanceSection = screen.getByRole('region', {
+      name: 'Appearance & Accessibility',
+    });
+    const audioSection = screen.getByRole('region', { name: 'Audio' });
+    expect(
+      appearanceSection.compareDocumentPosition(audioSection) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    const app = document.querySelector('.application');
+    expect(app).toHaveAttribute('data-dark-mode', 'false');
+    expect(app).toHaveAttribute('data-colour-blind', 'false');
+
+    fireEvent.click(screen.getByRole('switch', { name: 'Colour blind mode' }));
+    fireEvent.click(screen.getByRole('switch', { name: 'Dark mode' }));
+
+    expect(screen.getByRole('switch', { name: 'Colour blind mode' })).toBeChecked();
+    expect(screen.getByRole('switch', { name: 'Dark mode' })).toBeChecked();
+    expect(app).toHaveAttribute('data-dark-mode', 'true');
+    expect(app).toHaveAttribute('data-colour-blind', 'true');
+
+    fireEvent.click(screen.getByRole('switch', { name: 'Dark mode' }));
+    expect(app).toHaveAttribute('data-dark-mode', 'false');
+    expect(app).toHaveAttribute('data-colour-blind', 'true');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back to Home' }));
+    expect(screen.getByRole('img', { name: /mini memory game logo/i })).toBeInTheDocument();
+    expect(document.querySelector('.application')).toHaveAttribute(
+      'data-colour-blind',
+      'true',
+    );
+  });
+
   it('shows the description and version details in the app info modal', () => {
     render(<App />);
 

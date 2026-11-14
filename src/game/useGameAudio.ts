@@ -32,7 +32,10 @@ export function useGameAudio() {
     }
 
     void audio.play().catch((error: unknown) => {
-      if (error instanceof DOMException && error.name === 'NotAllowedError') {
+      if (
+        error instanceof DOMException &&
+        (error.name === 'NotAllowedError' || error.name === 'AbortError')
+      ) {
         return;
       }
 

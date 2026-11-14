@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
+  EyeIcon,
   AccessibilityIcon,
   BackArrowIcon,
+  MoonIcon,
   MusicNoteIcon,
   SpeakerIcon,
   VibrationIcon,
@@ -138,7 +140,21 @@ function SettingsConfirmation({
   );
 }
 
-export default function SettingsPage({ onBack }: { onBack: () => void }) {
+interface SettingsPageProps {
+  onBack: () => void;
+  colourBlindMode: boolean;
+  darkMode: boolean;
+  onColourBlindModeChange: () => void;
+  onDarkModeChange: () => void;
+}
+
+export default function SettingsPage({
+  onBack,
+  colourBlindMode,
+  darkMode,
+  onColourBlindModeChange,
+  onDarkModeChange,
+}: SettingsPageProps) {
   const [backgroundMusic, setBackgroundMusic] = useState(true);
   const [musicVolume, setMusicVolume] = useState(30);
   const [soundEffects, setSoundEffects] = useState(true);
@@ -168,6 +184,23 @@ export default function SettingsPage({ onBack }: { onBack: () => void }) {
           <h1>Settings</h1>
           <span aria-hidden="true" />
         </header>
+
+        <SettingsSection title="Appearance & Accessibility">
+          <SettingToggle
+            label="Colour blind mode"
+            description="Adjust colours for better visibility"
+            icon={<EyeIcon />}
+            checked={colourBlindMode}
+            onChange={onColourBlindModeChange}
+          />
+          <SettingToggle
+            label="Dark mode"
+            description="Use a darker game appearance"
+            icon={<MoonIcon />}
+            checked={darkMode}
+            onChange={onDarkModeChange}
+          />
+        </SettingsSection>
 
         <SettingsSection title="Audio">
           <SettingToggle
