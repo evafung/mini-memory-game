@@ -19,6 +19,7 @@ import {
   ShapeIcon,
 } from './components/ShapeIcons';
 import HomeNavigation from './components/HomeNavigation';
+import PersonalLeaderboard from './components/PersonalLeaderboard';
 import SettingsPage from './components/SettingsPage';
 import {
   SHAPE_DEFINITIONS,
@@ -36,6 +37,12 @@ import {
 import { useGameAudio } from './game/useGameAudio';
 import { usePrefersReducedMotion } from './hooks/usePrefersReducedMotion';
 import { triggerHaptic } from './services/hapticService';
+import {
+  clearLeaderboard,
+  loadLeaderboard,
+  recordCompletedGame,
+  type LeaderboardEntry,
+} from './services/leaderboardService';
 import {
   loadSettings,
   saveSettings,
@@ -132,9 +139,11 @@ function HomeDialog({
 
 function App() {
   const [phase, setPhase] = useState<GamePhase>('HOME');
-  const [page, setPage] = useState<'home' | 'settings'>('home');
+  const [page, setPage] = useState<'home' | 'settings' | 'leaderboard'>('home');
   const [homeModal, setHomeModal] = useState<HomeModalKind>(null);
   const [settings, setSettings] = useState(loadSettings);
+  const [leaderboardEntries, setLeaderboardEntries] =
+    useState<LeaderboardEntry[]>(loadLeaderboard);
   const [score, setScore] = useState(0);
   const [difficulty, setDifficulty] = useState<Difficulty>(INITIAL_DIFFICULTY);
   const [sequence, setSequence] = useState<ShapeId[]>([]);
@@ -150,6 +159,7 @@ function App() {
   const effectiveReduceAnimations = settings.reduceAnimations || systemPrefersReducedMotion;
   const timeoutBounds = useRef<number[]>([]);
   const animationFrameRef = useRef<number | null>(null);
+  const recordedGameRef = useRef(false);
 
   useEffect(() => {
     saveSettings(settings);
@@ -158,6 +168,11 @@ function App() {
   const updateSetting: SettingsChangeHandler = (key, value) => {
     setSettings((currentSettings) => ({ ...currentSettings, [key]: value }));
   };
+
+  const resetPersonalRecords = useCallback(() => {
+    clearLeaderboard();
+    setLeaderboardEntries([]);
+  }, []);
 
   const handleButtonInteraction = useCallback(
     (event: MouseEvent<HTMLDivElement>) => {
@@ -201,6 +216,7 @@ function App() {
     clearScheduledTimers();
     stopAnimationFrame();
     stopSound('roundTimer');
+    recordedGameRef.current = false;
     setScore(0);
     setDifficulty(INITIAL_DIFFICULTY);
     beginRound(INITIAL_DIFFICULTY);
@@ -318,10 +334,14 @@ function App() {
 
   useEffect(() => {
     if (phase === 'GAME_OVER') {
+      if (!recordedGameRef.current) {
+        recordedGameRef.current = true;
+        setLeaderboardEntries(recordCompletedGame(score));
+      }
       playSound('gameOver');
       triggerHaptic('gameOver', settings.hapticFeedback);
     }
-  }, [phase, playSound, settings.hapticFeedback]);
+  }, [phase, playSound, score, settings.hapticFeedback]);
 
   useEffect(() => {
     if (phase !== 'PLAYER_INPUT') {
@@ -473,8 +493,26 @@ function App() {
       >
         <SettingsPage
           onBack={() => setPage('home')}
+          onResetPersonalRecords={resetPersonalRecords}
           settings={settings}
           onSettingChange={updateSetting}
+        />
+      </div>
+    );
+  }
+
+  if (page === 'leaderboard') {
+    return (
+      <div
+        className="application"
+        data-dark-mode={settings.darkMode}
+        data-colour-blind={settings.colourBlindMode}
+        data-reduce-motion={effectiveReduceAnimations}
+        onClickCapture={handleButtonInteraction}
+      >
+        <PersonalLeaderboard
+          entries={leaderboardEntries}
+          onBack={() => setPage('home')}
         />
       </div>
     );
@@ -579,7 +617,10 @@ function App() {
         {phase === 'HOME' ? (
           <>
             <main className="home-main">
-              <HomeNavigation onSettings={() => setPage('settings')} />
+              <HomeNavigation
+                onLeaderboard={() => setPage('leaderboard')}
+                onSettings={() => setPage('settings')}
+              />
               <div className="home-content">{renderMiddleDisplay()}</div>
             </main>
             <footer className="home-footer">

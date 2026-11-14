@@ -32,14 +32,16 @@ function NavigationIconButton({
 }
 
 export default function HomeNavigation({
+  onLeaderboard,
   onSettings,
 }: {
+  onLeaderboard: () => void;
   onSettings: () => void;
 }) {
   return (
     <nav className="home-navigation" aria-label="Home">
       <div className="home-navigation__slot">
-        <NavigationIconButton label="Leaderboard" disabled>
+        <NavigationIconButton label="Leaderboard" onClick={onLeaderboard}>
           <TrophyIcon />
         </NavigationIconButton>
       </div>

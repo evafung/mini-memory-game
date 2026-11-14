@@ -2,13 +2,13 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   EyeIcon,
   AccessibilityIcon,
-  BackArrowIcon,
   MoonIcon,
   MusicNoteIcon,
   SpeakerIcon,
   VibrationIcon,
 } from './ShapeIcons';
 import type { AppSettings } from '../services/settingsService';
+import PageHeader from './PageHeader';
 
 function SettingToggle({
   label,
@@ -95,9 +95,11 @@ function SettingsSection({
 function SettingsConfirmation({
   open,
   onClose,
+  onReset,
 }: {
   open: boolean;
   onClose: () => void;
+  onReset: () => void;
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
@@ -133,7 +135,14 @@ function SettingsConfirmation({
         <button type="button" className="settings-confirmation__cancel" onClick={onClose}>
           Cancel
         </button>
-        <button type="button" className="settings-confirmation__reset" onClick={onClose}>
+        <button
+          type="button"
+          className="settings-confirmation__reset"
+          onClick={() => {
+            onReset();
+            onClose();
+          }}
+        >
           Reset
         </button>
       </div>
@@ -143,6 +152,7 @@ function SettingsConfirmation({
 
 interface SettingsPageProps {
   onBack: () => void;
+  onResetPersonalRecords: () => void;
   settings: AppSettings;
   onSettingChange: <Key extends keyof AppSettings>(
     key: Key,
@@ -152,6 +162,7 @@ interface SettingsPageProps {
 
 export default function SettingsPage({
   onBack,
+  onResetPersonalRecords,
   settings,
   onSettingChange,
 }: SettingsPageProps) {
@@ -159,18 +170,7 @@ export default function SettingsPage({
 
   return (
     <main className="settings-page">
-      <header className="settings-header">
-        <button
-          className="settings-header__back"
-          type="button"
-          aria-label="Back to Home"
-          onClick={onBack}
-        >
-          <BackArrowIcon />
-        </button>
-        <h1>Settings</h1>
-        <span aria-hidden="true" />
-      </header>
+      <PageHeader title="Settings" onBack={onBack} />
 
       <div className="settings-page__content">
         <SettingsSection title="Appearance & Accessibility">
@@ -267,6 +267,7 @@ export default function SettingsPage({
       <SettingsConfirmation
         open={isResetConfirmationOpen}
         onClose={() => setIsResetConfirmationOpen(false)}
+        onReset={onResetPersonalRecords}
       />
     </main>
   );

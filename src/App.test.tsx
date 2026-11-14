@@ -6,6 +6,7 @@ import {
   createDefaultSettings,
   SETTINGS_STORAGE_KEY,
 } from './services/settingsService';
+import { LEADERBOARD_STORAGE_KEY } from './services/leaderboardService';
 
 const originalMatchMediaDescriptor = Object.getOwnPropertyDescriptor(window, 'matchMedia');
 const originalVibrateDescriptor = Object.getOwnPropertyDescriptor(navigator, 'vibrate');
@@ -113,7 +114,7 @@ describe('application journeys', () => {
   it('opens settings with interactive visual controls and reset confirmation', () => {
     render(<App />);
 
-    expect(screen.getByRole('button', { name: 'Leaderboard' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Leaderboard' })).toBeEnabled();
     expect(screen.getByRole('button', { name: 'Profile' })).toBeDisabled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
@@ -141,12 +142,117 @@ describe('application journeys', () => {
     fireEvent.click(screen.getByRole('button', { name: /^Reset$/ }));
     const resetDialog = screen.getByRole('dialog', { name: 'Reset personal records?' });
     const savedSettingsBeforeReset = window.localStorage.getItem(SETTINGS_STORAGE_KEY);
+    window.localStorage.setItem(
+      LEADERBOARD_STORAGE_KEY,
+      JSON.stringify({
+        entries: [{ id: 'existing-score', score: 100, date: '2026-11-14T10:00:00.000Z' }],
+      }),
+    );
     fireEvent.click(within(resetDialog).getByRole('button', { name: 'Reset' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(window.localStorage.getItem(SETTINGS_STORAGE_KEY)).toBe(savedSettingsBeforeReset);
+    expect(window.localStorage.getItem(LEADERBOARD_STORAGE_KEY)).toBeNull();
 
     fireEvent.click(screen.getByRole('button', { name: 'Back to Home' }));
     expect(screen.getByRole('img', { name: /mini memory game logo/i })).toBeInTheDocument();
+  });
+
+  it('opens the empty leaderboard with the shared sticky page header', () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Leaderboard' }));
+
+    const header = screen.getByRole('heading', { name: 'Leaderboard' }).closest(
+      '.settings-header',
+    );
+    const content = screen.getByRole('region', { name: 'Leaderboard scores' });
+    expect(header?.parentElement).toHaveClass('settings-page');
+    expect(content).toHaveClass('settings-page__content');
+    expect(content).toHaveAttribute('tabindex', '0');
+    expect(screen.getByRole('status')).toHaveTextContent('No scores yet');
+    expect(
+      screen.getByText('Complete a game to add your first score to the leaderboard.'),
+    ).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back to Home' }));
+    expect(screen.getByRole('img', { name: /mini memory game logo/i })).toBeInTheDocument();
+  });
+
+  it('renders saved leaderboard entries with rank colours and only score and date', () => {
+    window.localStorage.setItem(
+      LEADERBOARD_STORAGE_KEY,
+      JSON.stringify({
+        entries: [
+          { id: 'second', score: 90, date: '2026-11-13T10:00:00.000Z' },
+          { id: 'first', score: 120, date: '2026-11-14T10:00:00.000Z' },
+          { id: 'third', score: 80, date: '2026-11-12T10:00:00.000Z' },
+          { id: 'fourth', score: 70, date: '2026-11-11T10:00:00.000Z' },
+        ],
+      }),
+    );
+    vi.setSystemTime(new Date('2026-11-14T10:00:00.000Z'));
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Leaderboard' }));
+    const entries = screen.getByRole('list', { name: 'Personal leaderboard' }).children;
+    expect(entries).toHaveLength(4);
+    expect(entries[0]).toHaveClass('leaderboard-entry--top-1');
+    expect(entries[1]).toHaveClass('leaderboard-entry--top-2');
+    expect(entries[2]).toHaveClass('leaderboard-entry--top-3');
+    expect(entries[3]).not.toHaveClass('leaderboard-entry--top-4');
+    expect(entries[0].querySelector('.leaderboard-entry__rank')).toHaveClass(
+      'leaderboard-entry__rank--top-1',
+    );
+    expect(entries[1].querySelector('.leaderboard-entry__rank')).toHaveClass(
+      'leaderboard-entry__rank--top-2',
+    );
+    expect(entries[2].querySelector('.leaderboard-entry__rank')).toHaveClass(
+      'leaderboard-entry__rank--top-3',
+    );
+    expect(entries[3].querySelector('.leaderboard-entry__rank')).not.toHaveClass(
+      'leaderboard-entry__rank--top-4',
+    );
+    expect(entries[0]).toHaveTextContent('1');
+    expect(entries[0]).toHaveTextContent('120');
+    expect(entries[0]).toHaveTextContent('< 1 minute ago');
+    expect(entries[1]).toHaveTextContent('Yesterday');
+    expect(entries[0].querySelectorAll('time')).toHaveLength(1);
+    expect(entries[0].querySelectorAll('strong')).toHaveLength(1);
+    expect(entries[0].querySelectorAll('button')).toHaveLength(0);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back to Home' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    fireEvent.click(screen.getByRole('switch', { name: 'Dark mode' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Back to Home' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Leaderboard' }));
+
+    expect(document.querySelector('.application')).toHaveAttribute('data-dark-mode', 'true');
+    const darkModeEntries = screen.getByRole('list', {
+      name: 'Personal leaderboard',
+    }).children;
+    expect(darkModeEntries[0]).toHaveClass('leaderboard-entry--top-1');
+    expect(darkModeEntries[0].querySelector('.leaderboard-entry__rank')).toHaveClass(
+      'leaderboard-entry__rank--top-1',
+    );
+  });
+
+  it('records a completed game exactly once with its final score', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.1);
+    render(<App />);
+    startRoundAndReachPlayerInput();
+    fireEvent.click(screen.getByRole('button', { name: 'Select Circle' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Select Triangle' }));
+
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+
+    const savedEntries = JSON.parse(
+      window.localStorage.getItem(LEADERBOARD_STORAGE_KEY) ?? '{"entries":[]}',
+    ).entries;
+    expect(savedEntries).toHaveLength(1);
+    expect(savedEntries[0]).toMatchObject({ score: 0 });
+    expect(Number.isNaN(Date.parse(savedEntries[0].date))).toBe(false);
   });
 
   it('keeps the settings header outside the scrollable settings content', () => {
