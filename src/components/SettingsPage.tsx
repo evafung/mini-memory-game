@@ -8,6 +8,7 @@ import {
   SpeakerIcon,
   VibrationIcon,
 } from './ShapeIcons';
+import type { AppSettings } from '../services/settingsService';
 
 function SettingToggle({
   label,
@@ -142,31 +143,18 @@ function SettingsConfirmation({
 
 interface SettingsPageProps {
   onBack: () => void;
-  colourBlindMode: boolean;
-  darkMode: boolean;
-  onColourBlindModeChange: () => void;
-  onDarkModeChange: () => void;
+  settings: AppSettings;
+  onSettingChange: <Key extends keyof AppSettings>(
+    key: Key,
+    value: AppSettings[Key],
+  ) => void;
 }
 
 export default function SettingsPage({
   onBack,
-  colourBlindMode,
-  darkMode,
-  onColourBlindModeChange,
-  onDarkModeChange,
+  settings,
+  onSettingChange,
 }: SettingsPageProps) {
-  const [backgroundMusic, setBackgroundMusic] = useState(true);
-  const [musicVolume, setMusicVolume] = useState(30);
-  const [soundEffects, setSoundEffects] = useState(true);
-  const [soundVolume, setSoundVolume] = useState(70);
-  const [hapticFeedback, setHapticFeedback] = useState(true);
-  const [reduceAnimations, setReduceAnimations] = useState(() => {
-    return (
-      typeof window !== 'undefined' &&
-      typeof window.matchMedia === 'function' &&
-      window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    );
-  });
   const [isResetConfirmationOpen, setIsResetConfirmationOpen] = useState(false);
 
   return (
@@ -190,15 +178,15 @@ export default function SettingsPage({
             label="Colour blind mode"
             description="Adjust colours for better visibility"
             icon={<EyeIcon />}
-            checked={colourBlindMode}
-            onChange={onColourBlindModeChange}
+            checked={settings.colourBlindMode}
+            onChange={() => onSettingChange('colourBlindMode', !settings.colourBlindMode)}
           />
           <SettingToggle
             label="Dark mode"
             description="Use a darker game appearance"
             icon={<MoonIcon />}
-            checked={darkMode}
-            onChange={onDarkModeChange}
+            checked={settings.darkMode}
+            onChange={() => onSettingChange('darkMode', !settings.darkMode)}
           />
         </SettingsSection>
 
@@ -207,27 +195,29 @@ export default function SettingsPage({
             label="Background music"
             description="Music during gameplay"
             icon={<MusicNoteIcon />}
-            checked={backgroundMusic}
-            onChange={() => setBackgroundMusic((current) => !current)}
+            checked={settings.backgroundMusic}
+            onChange={() =>
+              onSettingChange('backgroundMusic', !settings.backgroundMusic)
+            }
           />
           <SettingSlider
             id="music-volume"
             label="Music volume"
-            value={musicVolume}
-            onChange={setMusicVolume}
+            value={settings.musicVolume}
+            onChange={(value) => onSettingChange('musicVolume', value)}
           />
           <SettingToggle
             label="Sound effects"
             description="Button taps, countdown and game feedback"
             icon={<SpeakerIcon />}
-            checked={soundEffects}
-            onChange={() => setSoundEffects((current) => !current)}
+            checked={settings.soundEffects}
+            onChange={() => onSettingChange('soundEffects', !settings.soundEffects)}
           />
           <SettingSlider
             id="sound-volume"
             label="Sound volume"
-            value={soundVolume}
-            onChange={setSoundVolume}
+            value={settings.soundVolume}
+            onChange={(value) => onSettingChange('soundVolume', value)}
           />
         </SettingsSection>
 
@@ -236,15 +226,17 @@ export default function SettingsPage({
             label="Haptic feedback"
             description="Vibration on supported devices"
             icon={<VibrationIcon />}
-            checked={hapticFeedback}
-            onChange={() => setHapticFeedback((current) => !current)}
+            checked={settings.hapticFeedback}
+            onChange={() => onSettingChange('hapticFeedback', !settings.hapticFeedback)}
           />
           <SettingToggle
             label="Reduce animations"
             description="Reduce visual movement and transitions"
             icon={<AccessibilityIcon />}
-            checked={reduceAnimations}
-            onChange={() => setReduceAnimations((current) => !current)}
+            checked={settings.reduceAnimations}
+            onChange={() =>
+              onSettingChange('reduceAnimations', !settings.reduceAnimations)
+            }
           />
         </SettingsSection>
 

@@ -2,6 +2,10 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import App from './App';
+import {
+  createDefaultSettings,
+  SETTINGS_STORAGE_KEY,
+} from './services/settingsService';
 
 function startRoundAndReachPlayerInput() {
   act(() => {
@@ -19,6 +23,7 @@ function startRoundAndReachPlayerInput() {
 
 describe('application journeys', () => {
   beforeEach(() => {
+    window.localStorage.clear();
     vi.useFakeTimers();
   });
 
@@ -26,6 +31,7 @@ describe('application journeys', () => {
     vi.runOnlyPendingTimers();
     vi.useRealTimers();
     vi.restoreAllMocks();
+    window.localStorage.clear();
   });
 
   it('renders the home screen and starts a new game', () => {
@@ -121,8 +127,10 @@ describe('application journeys', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /^Reset$/ }));
     const resetDialog = screen.getByRole('dialog', { name: 'Reset personal records?' });
+    const savedSettingsBeforeReset = window.localStorage.getItem(SETTINGS_STORAGE_KEY);
     fireEvent.click(within(resetDialog).getByRole('button', { name: 'Reset' }));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(window.localStorage.getItem(SETTINGS_STORAGE_KEY)).toBe(savedSettingsBeforeReset);
 
     fireEvent.click(screen.getByRole('button', { name: 'Back to Home' }));
     expect(screen.getByRole('img', { name: /mini memory game logo/i })).toBeInTheDocument();
@@ -166,12 +174,114 @@ describe('application journeys', () => {
     );
   });
 
+  it('persists all settings independently and restores them after remounting', () => {
+    const defaultReduceAnimations = createDefaultSettings().reduceAnimations;
+    const { unmount } = render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+
+    fireEvent.click(screen.getByRole('switch', { name: 'Colour blind mode' }));
+    fireEvent.click(screen.getByRole('switch', { name: 'Dark mode' }));
+    fireEvent.click(screen.getByRole('switch', { name: 'Background music' }));
+    fireEvent.change(screen.getByRole('slider', { name: 'Music volume' }), {
+      target: { value: '46' },
+    });
+    fireEvent.click(screen.getByRole('switch', { name: 'Sound effects' }));
+    fireEvent.change(screen.getByRole('slider', { name: 'Sound volume' }), {
+      target: { value: '63' },
+    });
+    fireEvent.click(screen.getByRole('switch', { name: 'Haptic feedback' }));
+    fireEvent.click(screen.getByRole('switch', { name: 'Reduce animations' }));
+
+    const savedSettings = window.localStorage.getItem(SETTINGS_STORAGE_KEY);
+    expect(savedSettings).not.toBeNull();
+    expect(JSON.parse(savedSettings ?? 'null')).toMatchObject({
+      colourBlindMode: true,
+      darkMode: true,
+      backgroundMusic: false,
+      musicVolume: 46,
+      soundEffects: false,
+      soundVolume: 63,
+      hapticFeedback: false,
+      reduceAnimations: !defaultReduceAnimations,
+    });
+
+    unmount();
+    render(<App />);
+    expect(document.querySelector('.application')).toHaveAttribute(
+      'data-dark-mode',
+      'true',
+    );
+    expect(document.querySelector('.application')).toHaveAttribute(
+      'data-colour-blind',
+      'true',
+    );
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+
+    expect(screen.getByRole('switch', { name: 'Colour blind mode' })).toBeChecked();
+    expect(screen.getByRole('switch', { name: 'Dark mode' })).toBeChecked();
+    expect(screen.getByRole('switch', { name: 'Background music' })).not.toBeChecked();
+    expect(screen.getByRole('slider', { name: 'Music volume' })).toHaveValue('46');
+    expect(screen.getByRole('switch', { name: 'Sound effects' })).not.toBeChecked();
+    expect(screen.getByRole('slider', { name: 'Sound volume' })).toHaveValue('63');
+    expect(screen.getByRole('switch', { name: 'Haptic feedback' })).not.toBeChecked();
+    expect(screen.getByRole('switch', { name: 'Reduce animations' })).toHaveAttribute(
+      'aria-checked',
+      String(!defaultReduceAnimations),
+    );
+  });
+
+  it('falls back to defaults for corrupted saved settings', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    window.localStorage.setItem(SETTINGS_STORAGE_KEY, '{invalid json');
+
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+
+    expect(screen.getByRole('switch', { name: 'Colour blind mode' })).not.toBeChecked();
+    expect(screen.getByRole('switch', { name: 'Dark mode' })).not.toBeChecked();
+    expect(screen.getByRole('switch', { name: 'Background music' })).toBeChecked();
+    expect(screen.getByRole('slider', { name: 'Music volume' })).toHaveValue('30');
+    expect(screen.getByRole('switch', { name: 'Sound effects' })).toBeChecked();
+    expect(screen.getByRole('slider', { name: 'Sound volume' })).toHaveValue('70');
+    expect(screen.getByRole('switch', { name: 'Haptic feedback' })).toBeChecked();
+  });
+
+  it('remains usable when browser storage is unavailable', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new Error('Storage unavailable');
+    });
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('Storage unavailable');
+    });
+
+    render(<App />);
+    fireEvent.click(screen.getByRole('button', { name: 'Settings' }));
+    fireEvent.click(screen.getByRole('switch', { name: 'Dark mode' }));
+    expect(screen.getByRole('switch', { name: 'Dark mode' })).toBeChecked();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Back to Home' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Start' }));
+    expect(screen.getByText('3')).toBeInTheDocument();
+  });
+
   it('shows the description and version details in the app info modal', () => {
     render(<App />);
 
     fireEvent.click(screen.getByRole('button', { name: 'App information' }));
 
     expect(screen.getByText(/watch the shapes, remember their order/i)).toBeInTheDocument();
+    expect(screen.getByText('Privacy')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Mini Memory Game stores your game settings locally in your browser so your preferences are remembered when you return.',
+      ),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'We do not use this storage to identify you or collect personal information. Your settings remain on your device and can be cleared by resetting them in Settings or clearing your browser data.',
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByText('Version 1.0.0')).toBeInTheDocument();
     expect(screen.getByText('© 2026')).toBeInTheDocument();
   });
@@ -229,7 +339,7 @@ describe('application journeys', () => {
     vi.spyOn(HTMLMediaElement.prototype, 'play').mockImplementation(function (
       this: HTMLMediaElement,
     ) {
-      if (this.src.includes('bg-music.mp3')) {
+      if (this.src.includes('bgm.mp3')) {
         expect(this.loop).toBe(true);
         backgroundMusicPlayed = true;
       }
@@ -240,7 +350,7 @@ describe('application journeys', () => {
     vi.spyOn(HTMLMediaElement.prototype, 'pause').mockImplementation(function (
       this: HTMLMediaElement,
     ) {
-      if (this.src.includes('bg-music.mp3') && backgroundMusicPlayed) {
+      if (this.src.includes('bgm.mp3') && backgroundMusicPlayed) {
         backgroundMusicStopped = true;
       }
     });

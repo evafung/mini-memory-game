@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type MouseEvent,
+} from 'react';
 import {
   CheckMark,
   CircleProgressRing,
@@ -27,9 +34,18 @@ import {
   type ShapeId,
 } from './game/engine';
 import { useGameAudio } from './game/useGameAudio';
+import {
+  loadSettings,
+  saveSettings,
+  type AppSettings,
+} from './services/settingsService';
 import './App.css';
 
 type HomeModalKind = 'how-to-play' | 'app-info' | null;
+type SettingsChangeHandler = <Key extends keyof AppSettings>(
+  key: Key,
+  value: AppSettings[Key],
+) => void;
 
 function HomeDialog({
   kind,
@@ -90,6 +106,18 @@ function HomeDialog({
           <p className="app-info-description">
             Watch the shapes, remember their order, and see how far your memory can take you.
           </p>
+          <section className="app-info-privacy" aria-labelledby="app-info-privacy-title">
+            <h3 id="app-info-privacy-title">Privacy</h3>
+            <p>
+              Mini Memory Game stores your game settings locally in your browser so your
+              preferences are remembered when you return.
+            </p>
+            <p>
+              We do not use this storage to identify you or collect personal information. Your
+              settings remain on your device and can be cleared by resetting them in Settings or
+              clearing your browser data.
+            </p>
+          </section>
           <div className="app-info-footer">
             <span>Version 1.0.0</span>
             <span>© 2026</span>
@@ -104,8 +132,7 @@ function App() {
   const [phase, setPhase] = useState<GamePhase>('HOME');
   const [page, setPage] = useState<'home' | 'settings'>('home');
   const [homeModal, setHomeModal] = useState<HomeModalKind>(null);
-  const [colourBlindMode, setColourBlindMode] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
+  const [settings, setSettings] = useState(loadSettings);
   const [score, setScore] = useState(0);
   const [difficulty, setDifficulty] = useState<Difficulty>(INITIAL_DIFFICULTY);
   const [sequence, setSequence] = useState<ShapeId[]>([]);
@@ -116,9 +143,26 @@ function App() {
   const [remainingTimeMs, setRemainingTimeMs] = useState(INITIAL_DIFFICULTY.inputTimeMs);
   const [gameOverReason, setGameOverReason] = useState<'incorrect' | 'timeout' | null>(null);
 
-  const { playSound, stopSound } = useGameAudio();
+  const { playSound, stopSound } = useGameAudio(settings);
   const timeoutBounds = useRef<number[]>([]);
   const animationFrameRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    saveSettings(settings);
+  }, [settings]);
+
+  const updateSetting: SettingsChangeHandler = (key, value) => {
+    setSettings((currentSettings) => ({ ...currentSettings, [key]: value }));
+  };
+
+  const handleButtonInteraction = useCallback(
+    (event: MouseEvent<HTMLDivElement>) => {
+      if (event.target instanceof Element && event.target.closest('button')) {
+        playSound('buttonClick');
+      }
+    },
+    [playSound],
+  );
 
   const clearScheduledTimers = useCallback(() => {
     timeoutBounds.current.forEach((timerId) => {
@@ -266,6 +310,12 @@ function App() {
   }, [phase]);
 
   useEffect(() => {
+    if (phase === 'GAME_OVER') {
+      playSound('gameOver');
+    }
+  }, [phase, playSound]);
+
+  useEffect(() => {
     if (phase !== 'PLAYER_INPUT') {
       return undefined;
     }
@@ -339,6 +389,7 @@ function App() {
         return;
       }
 
+      playSound('correctAnswer');
       const nextIndex = selectionIndex + 1;
       if (nextIndex >= sequence.length) {
         const earnedPoints = calculateBonus(remainingTimeMs);
@@ -394,15 +445,14 @@ function App() {
     return (
       <div
         className="application"
-        data-dark-mode={darkMode}
-        data-colour-blind={colourBlindMode}
+        data-dark-mode={settings.darkMode}
+        data-colour-blind={settings.colourBlindMode}
+        onClickCapture={handleButtonInteraction}
       >
         <SettingsPage
           onBack={() => setPage('home')}
-          colourBlindMode={colourBlindMode}
-          darkMode={darkMode}
-          onColourBlindModeChange={() => setColourBlindMode((current) => !current)}
-          onDarkModeChange={() => setDarkMode((current) => !current)}
+          settings={settings}
+          onSettingChange={updateSetting}
         />
       </div>
     );
@@ -467,8 +517,9 @@ function App() {
     return (
       <div
         className="application"
-        data-dark-mode={darkMode}
-        data-colour-blind={colourBlindMode}
+        data-dark-mode={settings.darkMode}
+        data-colour-blind={settings.colourBlindMode}
+        onClickCapture={handleButtonInteraction}
       >
         <div className="app-shell app-shell--gameover">
           <div className="game-over-card">
@@ -496,8 +547,9 @@ function App() {
   return (
     <div
       className="application"
-      data-dark-mode={darkMode}
-      data-colour-blind={colourBlindMode}
+      data-dark-mode={settings.darkMode}
+      data-colour-blind={settings.colourBlindMode}
+      onClickCapture={handleButtonInteraction}
     >
       <div className="app-shell">
         {phase === 'HOME' ? (
